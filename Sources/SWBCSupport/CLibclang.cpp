@@ -911,6 +911,14 @@ extern "C" {
         void (*clang_experimental_DependencyScannerServiceOptions_setCASOptions)(CXDependencyScannerServiceOptions Opts, CXCASOptions);
 
         /**
+          * Specify whether to scan modules asynchronously.
+          *
+          * \param Value If it is non-zero, the option is on. Otherwise the
+          * option is off.
+          */
+        void (*clang_experimental_DependencyScannerServiceOptions_setAsyncScanModules)(CXDependencyScannerServiceOptions Opts, int Value);
+
+        /**
           * Set the working directory optimization option.
           * The dependency scanner service option Opts will indicate to the scanner that
           * the current working directory can or cannot be ignored when computing the
@@ -1455,6 +1463,7 @@ struct LibclangWrapper {
         LOOKUP_OPTIONAL(clang_experimental_DependencyScannerServiceOptions_setDependencyMode);
         LOOKUP_OPTIONAL_CAS_API(clang_experimental_DependencyScannerServiceOptions_setCASDatabases);
         LOOKUP_OPTIONAL(clang_experimental_DependencyScannerServiceOptions_setCASOptions);
+        LOOKUP_OPTIONAL(clang_experimental_DependencyScannerServiceOptions_setAsyncScanModules);
         LOOKUP_OPTIONAL(clang_experimental_DependencyScannerServiceOptions_setCWDOptimization);
         LOOKUP_OPTIONAL(clang_experimental_DependencyScannerService_create_v1);
         LOOKUP_OPTIONAL_DEPENDENCY_SCANNER_API(clang_experimental_DependencyScannerService_dispose_v0);
@@ -1616,10 +1625,14 @@ struct LibclangScanner {
 
     LibclangScanner(LibclangWrapper *lib,
                     LibclangFunctions::CXDependencyMode Mode,
+                    bool AsyncScanModules,
                     LibclangCASDatabases *casDBs, LibclangCASOptions *casOpts)
         : lib(lib) {
         auto opts = lib->fns.clang_experimental_DependencyScannerServiceOptions_create();
         lib->fns.clang_experimental_DependencyScannerServiceOptions_setDependencyMode(opts, Mode);
+        if (lib->fns.clang_experimental_DependencyScannerServiceOptions_setAsyncScanModules) {
+            lib->fns.clang_experimental_DependencyScannerServiceOptions_setAsyncScanModules(opts, AsyncScanModules);
+        }
         if (casDBs) {
             lib->fns.clang_experimental_DependencyScannerServiceOptions_setCASDatabases(opts, casDBs->casDBs);
         }
@@ -1775,9 +1788,9 @@ extern "C" {
         return lib->wrapper->hasNegativeStatCacheDiagnostics;
     }
 
-    libclang_scanner_t libclang_scanner_create(libclang_t lib, libclang_casdatabases_t casdbs, libclang_casoptions_t casOpts) {
+    libclang_scanner_t libclang_scanner_create(libclang_t lib, bool AsyncScanModules, libclang_casdatabases_t casdbs, libclang_casoptions_t casOpts) {
         return new libclang_scanner_t_{new LibclangScanner(
-            lib->wrapper, LibclangFunctions::CXDependencyMode_Full,
+            lib->wrapper, LibclangFunctions::CXDependencyMode_Full, AsyncScanModules,
             casdbs ? &casdbs->dbs : nullptr, casOpts ? &casOpts->opts : nullptr)};
     }
 

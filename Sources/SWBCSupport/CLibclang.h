@@ -111,7 +111,7 @@ CSUPPORT_EXPORT bool libclang_has_structured_scanner_diagnostics(libclang_t lib)
 CSUPPORT_EXPORT bool libclang_has_negative_stat_cache_diagnostics(libclang_t lib);
 
 /// Create a new scanner instance with optional CAS databases.
-CSUPPORT_EXPORT libclang_scanner_t libclang_scanner_create(libclang_t lib, libclang_casdatabases_t, libclang_casoptions_t);
+CSUPPORT_EXPORT libclang_scanner_t libclang_scanner_create(libclang_t lib, bool, libclang_casdatabases_t, libclang_casoptions_t);
 
 /// Dispose of a scanner.
 CSUPPORT_EXPORT void libclang_scanner_dispose(libclang_scanner_t scanner);

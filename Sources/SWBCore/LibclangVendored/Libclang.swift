@@ -46,8 +46,8 @@ public final class Libclang {
     }
 
     /// Create a new dependency scanner.
-    public func createScanner(casDBs: ClangCASDatabases? = nil, casOpts: ClangCASOptions? = nil) throws -> DependencyScanner {
-        return try DependencyScanner(self, casDBs: casDBs, casOpts: casOpts)
+    public func createScanner(asyncScanModules: Bool, casDBs: ClangCASDatabases? = nil, casOpts: ClangCASOptions? = nil) throws -> DependencyScanner {
+        return try DependencyScanner(self, asyncScanModules: asyncScanModules, casDBs: casDBs, casOpts: casOpts)
     }
 
     public func loadDiagnostics(filePath: String) throws -> [ClangDiagnostic] {
@@ -179,12 +179,12 @@ public final class DependencyScanner {
     /// accelerate dependency scanning. Those caches are *NOT* invalidated when
     /// files on disk change, so it is the responsibility of the client to
     /// allocate a new scanner when the caches need to be invalidated.
-    public init(_ libclang: Libclang, casDBs: ClangCASDatabases? = nil, casOpts: ClangCASOptions? = nil) throws {
+    public init(_ libclang: Libclang, asyncScanModules: Bool, casDBs: ClangCASDatabases? = nil, casOpts: ClangCASOptions? = nil) throws {
         guard libclang_has_scanner(libclang.lib) else {
             throw Error.featureUnsupported
         }
         self.libclang = libclang
-        self.scanner = libclang_scanner_create(libclang.lib, casDBs?.dbs, casOpts?.options)
+        self.scanner = libclang_scanner_create(libclang.lib, asyncScanModules, casDBs?.dbs, casOpts?.options)
     }
 
     deinit {

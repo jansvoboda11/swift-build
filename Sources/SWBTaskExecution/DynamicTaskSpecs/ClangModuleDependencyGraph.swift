@@ -199,6 +199,7 @@ package final class ClangModuleDependencyGraph {
 
     private struct LibclangRegistryKey: Hashable {
         var libclangPath: String
+        var asyncScanModules: Bool
         var casOptions: CASOptions?
     }
 
@@ -214,15 +215,15 @@ package final class ClangModuleDependencyGraph {
         let scanner: DependencyScanner
         let casDBs: ClangCASDatabases?
 
-        init(libclang: Libclang, casDBs: ClangCASDatabases?, casOptsForInvocations: ClangCASOptions?) throws {
+        init(libclang: Libclang, asyncScanModules: Bool, casDBs: ClangCASDatabases?, casOptsForInvocations: ClangCASOptions?) throws {
             self.libclang = libclang
-            self.scanner = try libclang.createScanner(casDBs: casDBs, casOpts: casOptsForInvocations)
+            self.scanner = try libclang.createScanner(asyncScanModules: asyncScanModules, casDBs: casDBs, casOpts: casOptsForInvocations)
             self.casDBs = casDBs
         }
     }
 
-    private func libclangWithScanner(forPath path: Path, casOptions: CASOptions?, cacheFallbackIfNotAvailable: Bool, core: Core) throws -> LibclangWithScanner {
-        let key = LibclangRegistryKey(libclangPath: path.str, casOptions: casOptions)
+    private func libclangWithScanner(forPath path: Path, asyncScanModules: Bool, casOptions: CASOptions?, cacheFallbackIfNotAvailable: Bool, core: Core) throws -> LibclangWithScanner {
+        let key = LibclangRegistryKey(libclangPath: path.str, asyncScanModules: asyncScanModules, casOptions: casOptions)
         if let libclangWithScanner = registryQueue.blocking_sync(execute: { scannerRegistry[key] }) {
             return libclangWithScanner
         }
@@ -260,7 +261,7 @@ package final class ClangModuleDependencyGraph {
                             }
                             return try (ClangCASDatabases(options: casOpts), casOptsForInvocations)
                         }
-                        return try LibclangWithScanner(libclang: newLibclang, casDBs: casSettings?.0, casOptsForInvocations: casSettings?.1)
+                        return try LibclangWithScanner(libclang: newLibclang, asyncScanModules: asyncScanModules, casDBs: casSettings?.0, casOptsForInvocations: casSettings?.1)
                     } catch DependencyScanner.Error.featureUnsupported {
                         throw StubError.error("libclang at '\(path)' does not have up-to-date dependency scanner")
                     } catch ClangCASDatabases.Error.featureUnsupported {
@@ -307,6 +308,7 @@ package final class ClangModuleDependencyGraph {
         usesSerializedDiagnostics: Bool,
         fileCommandLine: [String],
         workingDirectory: Path,
+        asyncScanModules: Bool,
         casOptions: CASOptions?,
         cacheFallbackIfNotAvailable: Bool,
         verifyingModule: String?,
@@ -314,7 +316,7 @@ package final class ClangModuleDependencyGraph {
         reportRequiredTargetDependencies: BooleanWarningLevel,
         fileSystem: any FSProxy
     ) throws -> ScanResult {
-        let clangWithScanner = try libclangWithScanner(forPath: libclangPath, casOptions: casOptions, cacheFallbackIfNotAvailable: cacheFallbackIfNotAvailable, core: core)
+        let clangWithScanner = try libclangWithScanner(forPath: libclangPath, asyncScanModules: asyncScanModules, casOptions: casOptions, cacheFallbackIfNotAvailable: cacheFallbackIfNotAvailable, core: core)
 
         let (compilerLauncher, compiler, originalFileArgs) = usesCompilerLauncher
             ? (fileCommandLine[0], fileCommandLine[1], fileCommandLine[2...])
@@ -553,6 +555,7 @@ package final class ClangModuleDependencyGraph {
     package func getCASDatabases(libclangPath: Path, casOptions: CASOptions) throws -> ClangCASDatabases? {
         let clangWithScanner = try libclangWithScanner(
             forPath: libclangPath,
+            asyncScanModules: false,
             casOptions: casOptions,
             cacheFallbackIfNotAvailable: false,
             core: core
@@ -575,6 +578,7 @@ package final class ClangModuleDependencyGraph {
                                     libclangPath: Path, casOptions: CASOptions?, location: String?) throws -> String? {
         let clangWithScanner = try libclangWithScanner(
             forPath: libclangPath,
+            asyncScanModules: false,
             casOptions: casOptions,
             cacheFallbackIfNotAvailable: false,
             core: core

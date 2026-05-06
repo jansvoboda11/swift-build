@@ -152,6 +152,7 @@ public final class ClangScanTaskAction: TaskAction, BuildValueValidatingTaskActi
                 usesSerializedDiagnostics: clangPayload.serializedDiagnosticsPath?.fileExtension == "dia",
                 fileCommandLine: options.commandLine,
                 workingDirectory: task.workingDirectory,
+                asyncScanModules: explicitModulesPayload.asyncScanModules,
                 casOptions: explicitModulesPayload.casOptions,
                 cacheFallbackIfNotAvailable: explicitModulesPayload.cacheFallbackIfNotAvailable,
                 verifyingModule: explicitModulesPayload.verifyingModule,

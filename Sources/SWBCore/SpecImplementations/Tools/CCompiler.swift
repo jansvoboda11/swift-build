@@ -363,6 +363,7 @@ public struct ClangExplicitModulesPayload: Serializable, Encodable, Sendable {
     public let outputPath: Path
     public let scanningOutputPath: Path
     public let casOptions: CASOptions?
+    public let asyncScanModules: Bool
     public let cacheFallbackIfNotAvailable: Bool
     public let dependencyFilteringRootPath: Path?
     public let reportRequiredTargetDependencies: BooleanWarningLevel
@@ -370,7 +371,7 @@ public struct ClangExplicitModulesPayload: Serializable, Encodable, Sendable {
     public let shouldGenerateReproducerForErrors: Bool
     public let reproducerOutputPath: Path?
 
-    fileprivate init(uniqueID: String, sourcePath: Path, libclangPath: Path, usesCompilerLauncher: Bool, outputPath: Path, scanningOutputPath: Path, casOptions: CASOptions?, cacheFallbackIfNotAvailable: Bool, dependencyFilteringRootPath: Path?, reportRequiredTargetDependencies: BooleanWarningLevel, verifyingModule: String?, shouldGenerateReproducerForErrors: Bool, reproducerOutputPath: Path?) {
+    fileprivate init(uniqueID: String, sourcePath: Path, libclangPath: Path, usesCompilerLauncher: Bool, outputPath: Path, scanningOutputPath: Path, asyncScanModules: Bool, casOptions: CASOptions?, cacheFallbackIfNotAvailable: Bool, dependencyFilteringRootPath: Path?, reportRequiredTargetDependencies: BooleanWarningLevel, verifyingModule: String?, shouldGenerateReproducerForErrors: Bool, reproducerOutputPath: Path?) {
         self.uniqueID = uniqueID
         self.sourcePath = sourcePath
         self.libclangPath = libclangPath
@@ -378,6 +379,7 @@ public struct ClangExplicitModulesPayload: Serializable, Encodable, Sendable {
         self.outputPath = outputPath
         self.scanningOutputPath = scanningOutputPath
         self.casOptions = casOptions
+        self.asyncScanModules = asyncScanModules
         self.cacheFallbackIfNotAvailable = cacheFallbackIfNotAvailable
         self.dependencyFilteringRootPath = dependencyFilteringRootPath
         self.reportRequiredTargetDependencies = reportRequiredTargetDependencies
@@ -387,7 +389,7 @@ public struct ClangExplicitModulesPayload: Serializable, Encodable, Sendable {
     }
 
     public func serialize<T: Serializer>(to serializer: T) {
-        serializer.serializeAggregate(13) {
+        serializer.serializeAggregate(14) {
             serializer.serialize(uniqueID)
             serializer.serialize(sourcePath)
             serializer.serialize(libclangPath)
@@ -395,6 +397,7 @@ public struct ClangExplicitModulesPayload: Serializable, Encodable, Sendable {
             serializer.serialize(outputPath)
             serializer.serialize(scanningOutputPath)
             serializer.serialize(casOptions)
+            serializer.serialize(asyncScanModules)
             serializer.serialize(cacheFallbackIfNotAvailable)
             serializer.serialize(dependencyFilteringRootPath)
             serializer.serialize(reportRequiredTargetDependencies)
@@ -405,7 +408,7 @@ public struct ClangExplicitModulesPayload: Serializable, Encodable, Sendable {
     }
 
     public init(from deserializer: any Deserializer) throws {
-        try deserializer.beginAggregate(13)
+        try deserializer.beginAggregate(14)
         self.uniqueID = try deserializer.deserialize()
         self.sourcePath = try deserializer.deserialize()
         self.libclangPath = try deserializer.deserialize()
@@ -413,6 +416,7 @@ public struct ClangExplicitModulesPayload: Serializable, Encodable, Sendable {
         self.outputPath = try deserializer.deserialize()
         self.scanningOutputPath = try deserializer.deserialize()
         self.casOptions = try deserializer.deserialize()
+        self.asyncScanModules = try deserializer.deserialize()
         self.cacheFallbackIfNotAvailable = try deserializer.deserialize()
         self.dependencyFilteringRootPath = try deserializer.deserialize()
         self.reportRequiredTargetDependencies = try deserializer.deserialize()
@@ -1028,6 +1032,7 @@ public class ClangCompilerSpec : CompilerSpec, SpecIdentifierType, GCCCompatible
                     // share precompiled modules.
                     outputPath: cbc.scope.evaluate(BuiltinMacros.CLANG_EXPLICIT_MODULES_OUTPUT_PATH),
                     scanningOutputPath: scanningOutputPath,
+                    asyncScanModules: cbc.scope.evaluate(BuiltinMacros.CLANG_EXPLICIT_MODULES_ASYNC_SCAN_MODULES),
                     casOptions: casOptions,
                     cacheFallbackIfNotAvailable: cbc.scope.evaluate(BuiltinMacros.CLANG_CACHE_FALLBACK_IF_UNAVAILABLE),
                     // To match the behavior of -MMD, our scan task should filter out headers in the SDK when discovering dependencies. In the long run, libclang should do this for us.
